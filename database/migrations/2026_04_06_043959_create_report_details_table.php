@@ -11,19 +11,32 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('report_details', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('report_id')->constrained('reports')->onDelete('cascade');
-            $table->string('outlet');
-            $table->text('alamat');
-            $table->string('pic');
-            $table->text('keterangan')->nullable();
-            $table->string('foto_path')->nullable();
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
-            $table->timestamps();
-            $table->index('report_id');
-        });
+        // Some deployments had equal migration timestamps; ensure parent table exists first.
+        if (! Schema::hasTable('reports')) {
+            Schema::create('reports', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+                $table->date('tanggal');
+                $table->timestamps();
+                $table->index(['user_id', 'tanggal']);
+            });
+        }
+
+        if (! Schema::hasTable('report_details')) {
+            Schema::create('report_details', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('report_id')->constrained('reports')->onDelete('cascade');
+                $table->string('outlet');
+                $table->text('alamat');
+                $table->string('pic');
+                $table->text('keterangan')->nullable();
+                $table->string('foto_path')->nullable();
+                $table->decimal('latitude', 10, 8)->nullable();
+                $table->decimal('longitude', 11, 8)->nullable();
+                $table->timestamps();
+                $table->index('report_id');
+            });
+        }
     }
 
     /**
