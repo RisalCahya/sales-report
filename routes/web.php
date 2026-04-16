@@ -2,37 +2,18 @@
 
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AdminSalesController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Storage;
 use App\Http\Middleware\NoCacheHeaders;
-
-// Serve public storage files directly via Laravel to support shared hosting
-// where Apache FollowSymLinks is disabled (e.g. Niagahoster).
-Route::get('/storage/{path}', function (string $path) {
-    // Prevent path traversal attacks
-    $path = ltrim($path, '/');
-    if (str_contains($path, '..')) {
-        abort(404);
-    }
-
-    if (!Storage::disk('public')->exists($path)) {
-        abort(404);
-    }
-
-    return response()->file(
-        Storage::disk('public')->path($path),
-        ['Cache-Control' => 'public, max-age=86400']
-    );
-})->where('path', '.*');
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified', NoCacheHeaders::class])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified', NoCacheHeaders::class])
+    ->name('dashboard');
 
 Route::middleware(['auth', NoCacheHeaders::class])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
