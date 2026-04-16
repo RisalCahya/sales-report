@@ -6,7 +6,7 @@
         <!-- Header -->
         <div class="app-soft-card mb-6 rounded-[28px] px-6 py-6">
             <h1 class="app-accent-title text-3xl font-extrabold">Buat Laporan Baru</h1>
-            <p class="mt-2 text-sm text-slate-600">Tanggal: <strong>{{ now()->format('l, d F Y') }}</strong></p>
+            <p class="mt-2 text-sm text-slate-600">Tanggal: <strong>{{ now()->locale('id')->translatedFormat('l, d F Y') }}</strong></p>
         </div>
 
         <!-- Main Form -->
