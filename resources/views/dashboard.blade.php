@@ -27,7 +27,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Laporan Hari Ini</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ Auth::user()->reports()->whereDate('tanggal', today())->count() }}
+                                {{ $stats['reportsTodayCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +42,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Kunjungan Hari Ini</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ Auth::user()->reports()->whereDate('tanggal', today())->get()->sum(fn($r) => $r->details->count()) }}
+                                {{ $stats['visitsTodayCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,7 +58,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Total Laporan</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ Auth::user()->reports()->count() }}
+                                {{ $stats['totalReportsCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-purple-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Total Sales</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ \App\Models\User::where('role', 'sales')->count() }}
+                                {{ $stats['totalSalesCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-blue-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,7 +88,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Laporan Hari Ini</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ \App\Models\Report::whereDate('tanggal', today())->count() }}
+                                {{ $stats['reportsTodayCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-green-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +103,7 @@
                         <div>
                             <p class="text-gray-600 text-sm font-medium">Total Laporan</p>
                             <p class="text-3xl font-bold text-gray-900 mt-2">
-                                {{ \App\Models\Report::count() }}
+                                {{ $stats['totalReportsCount'] }}
                             </p>
                         </div>
                         <svg class="w-12 h-12 text-purple-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -144,19 +144,13 @@
         <!-- Recent Reports -->
         <div class="app-soft-card rounded-[28px] p-6">
             <h2 class="text-xl font-bold text-gray-900 mb-4">Laporan Terbaru</h2>
-            @php
-                $recentReports = Auth::user()->role === 'sales'
-                    ? Auth::user()->reports()->latest()->take(5)->get()
-                    : \App\Models\Report::latest()->take(5)->get();
-            @endphp
-
             @if($recentReports->count() > 0)
                 <div class="space-y-3">
                     @foreach($recentReports as $report)
                         <div class="flex items-center justify-between gap-3 p-4 border border-sky-100 rounded-2xl bg-white/75 hover:bg-white transition-colors">
                             <div>
                                 <p class="font-semibold text-gray-900">{{ $report->user->name ?? 'Akun Sales Tidak Aktif' }}</p>
-                                <p class="text-sm text-gray-600">{{ $report->tanggal->format('d M Y') }} • {{ $report->created_at->setTimezone('Asia/Jakarta')->format('H:i') }} • {{ $report->details->count() }} kunjungan</p>
+                                <p class="text-sm text-gray-600">{{ $report->tanggal->format('d M Y') }} • {{ $report->created_at->setTimezone('Asia/Jakarta')->format('H:i') }} • {{ $report->details_count }} kunjungan</p>
                             </div>
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('reports.show', $report) }}" class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-200 transition-colors">

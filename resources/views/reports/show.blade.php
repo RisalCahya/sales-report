@@ -13,10 +13,10 @@
                             <strong>Sales:</strong> {{ $report->user->name ?? 'Akun Sales Tidak Aktif' }}
                         </p>
                         <p class="text-sm text-gray-600">
-                            <strong>Tanggal:</strong> {{ $report->tanggal->format('l, d F Y') }} • <strong>Jam:</strong> {{ $report->created_at->setTimezone('Asia/Jakarta')->format('H:i') }}
+                            <strong>Tanggal:</strong> {{ $report->tanggal->locale('id')->translatedFormat('l, d F Y') }} • <strong>Jam:</strong> {{ $report->created_at->setTimezone('Asia/Jakarta')->format('H:i') }}
                         </p>
                         <p class="text-sm text-gray-600">
-                            <strong>Jumlah Kunjungan:</strong> {{ $report->details_count }} outlet
+                            <strong>Jumlah Kunjungan:</strong> {{ $report->details->count() }} outlet
                         </p>
                     </div>
                 </div>
@@ -30,9 +30,9 @@
         </div>
 
         <!-- Kunjungan List -->
-        @if($details->count() > 0)
+        @if($report->details->count() > 0)
             <div class="space-y-6">
-                @foreach($details as $detail)
+                @foreach($report->details as $detail)
                     <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                         <!-- Card Header -->
                         <div class="bg-gradient-to-r from-blue-50 to-blue-100 border-b border-blue-200 px-6 py-4">
@@ -48,7 +48,7 @@
                                     </p>
                                 </div>
                                 <div class="text-right">
-                                    <p class="text-sm font-semibold text-blue-600">{{ $details->firstItem() + $loop->index }}/{{ $report->details_count }}</p>
+                                    <p class="text-sm font-semibold text-blue-600">{{ $loop->iteration }}/{{ $report->details->count() }}</p>
                                     <p class="text-xs text-gray-500 mt-1">{{ $detail->created_at->setTimezone('Asia/Jakarta')->format('H:i') }}</p>
                                 </div>
                             </div>
@@ -119,7 +119,7 @@
                                         Foto Bukti
                                     </label>
                                     <div class="relative">
-                                        <img src="{{ url('storage/' . ltrim($detail->foto_path, '/')) }}" alt="Foto {{ $detail->outlet }}" loading="lazy" decoding="async" class="w-full rounded-lg shadow-sm border border-gray-200 max-h-96 object-contain bg-gray-100">
+                                        <img src="{{ Storage::url($detail->foto_path) }}" alt="Foto {{ $detail->outlet }}" class="w-full rounded-lg shadow-sm border border-gray-200 max-h-96 object-contain bg-gray-100">
                                         <div class="mt-2 text-xs text-gray-500">
                                             Diambil pada: {{ $detail->captured_at_label ?? $detail->created_at->setTimezone('Asia/Jakarta')->format('d/m/Y, H:i:s') }}
                                         </div>
@@ -129,10 +129,6 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-
-            <div class="mt-6">
-                {{ $details->links() }}
             </div>
         @else
             <div class="bg-white rounded-lg shadow-sm p-12 text-center">

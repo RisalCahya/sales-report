@@ -130,12 +130,9 @@ class ReportController extends Controller
             abort(403);
         }
 
-        $report->load('user')->loadCount('details');
-        $details = $report->details()
-            ->orderByDesc('created_at')
-            ->paginate(8);
+        $report->load('details', 'user');
 
-        return view('reports.show', compact('report', 'details'));
+        return view('reports.show', compact('report'));
     }
 
     /**
