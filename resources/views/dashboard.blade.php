@@ -151,6 +151,16 @@
                             <div>
                                 <p class="font-semibold text-gray-900">{{ $report->user->name ?? 'Akun Sales Tidak Aktif' }}</p>
                                 <p class="text-sm text-gray-600">{{ $report->tanggal->format('d M Y') }} • {{ $report->created_at->setTimezone('Asia/Jakarta')->format('H:i') }} • {{ $report->details_count }} kunjungan</p>
+                                @if($report->details->isNotEmpty())
+                                    <div class="mt-2 text-sm text-gray-600">
+                                        @foreach($report->details->take(3) as $detailIndex => $detail)
+                                            <p>{{ $detailIndex + 1 }}. {{ $detail->outlet }}</p>
+                                        @endforeach
+                                        @if($report->details_count > 3)
+                                            <p class="text-xs text-gray-500 mt-1">+{{ $report->details_count - 3 }} outlet lainnya</p>
+                                        @endif
+                                    </div>
+                                @endif
                             </div>
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('reports.show', $report) }}" class="inline-flex items-center px-3 py-2 bg-blue-100 text-blue-700 text-sm font-semibold rounded-lg hover:bg-blue-200 transition-colors">

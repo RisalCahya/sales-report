@@ -66,7 +66,7 @@
                         <label for="user_id" class="block text-sm font-medium text-gray-700 mb-1">Sales</label>
                         <select id="user_id" name="user_id" class="w-full px-3 py-3 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Semua Sales</option>
-                            @foreach(\App\Models\User::where('role', 'sales')->get() as $user)
+                            @foreach($salesUsers as $user)
                                 <option value="{{ $user->id }}" {{ request('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                             @endforeach
                         </select>
@@ -78,6 +78,29 @@
                     </button>
                 </div>
             </form>
+
+            @if(Auth::user()->role === 'admin')
+            <form method="GET" action="{{ route('reports.export') }}" class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
+                <input type="hidden" name="tanggal_dari" value="{{ request('tanggal_dari') }}">
+                <input type="hidden" name="tanggal_sampai" value="{{ request('tanggal_sampai') }}">
+
+                <div class="md:col-span-3">
+                    <label for="export_user_id" class="block text-sm font-medium text-gray-700 mb-1">Export Data Sales</label>
+                    <select id="export_user_id" name="export_user_id" class="w-full px-3 py-3 sm:py-2 text-base sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="">Semua Sales</option>
+                        @foreach($salesUsers as $user)
+                            <option value="{{ $user->id }}" {{ (string) request('export_user_id', request('user_id')) === (string) $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="md:col-span-2 flex items-end">
+                    <button type="submit" class="w-full px-4 py-3 sm:py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
+                        Export Excel
+                    </button>
+                </div>
+            </form>
+            @endif
         </div>
 
         <!-- Reports List -->
@@ -103,6 +126,16 @@
                                 </svg>
                                 {{ $report->details_count ?? $report->details->count() }} kunjungan
                             </p>
+                            @if($report->details->isNotEmpty())
+                                <div class="mt-2 text-sm text-gray-600">
+                                    @foreach($report->details->take(3) as $detailIndex => $detail)
+                                        <p>{{ $detailIndex + 1 }}. {{ $detail->outlet }}</p>
+                                    @endforeach
+                                    @if($report->details_count > 3)
+                                        <p class="text-xs text-gray-500 mt-1">+{{ $report->details_count - 3 }} outlet lainnya</p>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                             <a href="{{ route('reports.show', $report) }}" class="inline-flex items-center justify-center w-full sm:w-auto px-4 py-3 sm:py-2 bg-blue-100 text-blue-700 font-semibold rounded-lg hover:bg-blue-200 transition-colors">

@@ -23,6 +23,7 @@ Route::middleware(['auth', NoCacheHeaders::class])->group(function () {
     // Report routes
     Route::resource('reports', ReportController::class);
     Route::post('/reports/{report}/details', [ReportController::class, 'addDetail'])->name('reports.addDetail');
+    Route::get('/reports-export', [ReportController::class, 'export'])->name('reports.export');
 
     // Admin sales management
     Route::get('/admin/sales', [AdminSalesController::class, 'index'])->name('admin.sales.index');
