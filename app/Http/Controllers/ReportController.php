@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Report;
 use App\Models\ReportDetail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
@@ -38,14 +40,126 @@ class ReportController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        $reports = $query->with('user')
+        $reports = $query->with([
+            'user',
+            'details:id,report_id,outlet',
+        ])
             ->withCount('details')
             ->orderByDesc('tanggal')
             ->orderByDesc('created_at')
             ->paginate(10)
             ->appends($request->query());
 
-        return view('reports.index', compact('reports'));
+        $salesUsers = collect();
+        if ($user->role === 'admin') {
+            $salesUsers = User::query()
+                ->where('role', 'sales')
+                ->orderBy('name')
+                ->get(['id', 'name']);
+        }
+
+        return view('reports.index', compact('reports', 'salesUsers'));
+    }
+
+    /**
+     * Export reports and detail rows to an Excel-compatible file.
+     */
+    public function export(Request $request): StreamedResponse
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin') {
+            abort(403);
+        }
+        $query = Report::query()->with(['user', 'details']);
+
+        if ($request->filled('tanggal_dari')) {
+            $query->whereDate('tanggal', '>=', $request->tanggal_dari);
+        }
+
+        if ($request->filled('tanggal_sampai')) {
+            $query->whereDate('tanggal', '<=', $request->tanggal_sampai);
+        }
+
+        if ($user->role === 'sales') {
+            $query->where('user_id', $user->id);
+        } else {
+            $selectedSalesId = $request->input('export_user_id', $request->input('user_id'));
+            if (!empty($selectedSalesId)) {
+                $query->where('user_id', $selectedSalesId);
+            }
+        }
+
+        $reports = $query
+            ->orderByDesc('tanggal')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $fileName = 'laporan_kunjungan_' . now()->format('Ymd_His') . '.xls';
+
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+            'Cache-Control' => 'max-age=0',
+        ];
+
+        return response()->stream(function () use ($reports) {
+            echo "\xEF\xBB\xBF";
+            echo '<html><head><meta charset="UTF-8"></head><body>';
+            echo '<table border="1">';
+            $tdDate = 'style=\'mso-number-format:"\\@"\'';
+            echo '<thead><tr>';
+            echo '<th>ID Laporan</th>';
+            echo '<th>Tanggal Laporan</th>';
+            echo '<th>Sales</th>';
+            echo '<th>Dibuat Pada</th>';
+            echo '<th>No. Kunjungan</th>';
+            echo '<th>Outlet</th>';
+            echo '<th>Alamat</th>';
+            echo '<th>PIC</th>';
+            echo '<th>Keterangan</th>';
+            echo '<th>Waktu Ambil Foto</th>';
+            echo '<th>Latitude</th>';
+            echo '<th>Longitude</th>';
+            echo '</tr></thead><tbody>';
+
+            $reportNo = 1;
+            foreach ($reports as $report) {
+                $details = $report->details;
+
+                if ($details->isEmpty()) {
+                    echo '<tr>';
+                    echo '<td>' . e((string) $report->id) . '</td>';
+                    echo '<td ' . $tdDate . '>' . e($report->tanggal?->format('d/m/Y') ?? '') . '</td>';
+                    echo '<td>' . e($report->user->name ?? 'Akun Sales Tidak Aktif') . '</td>';
+                    echo '<td ' . $tdDate . '>' . e($report->created_at?->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '') . '</td>';
+                    echo '<td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>';
+                    echo '</tr>';
+                    $reportNo++;
+                    continue;
+                }
+
+                $totalKunjungan = $details->count();
+                foreach ($details as $index => $detail) {
+                    echo '<tr>';
+                    echo '<td>' . e((string) $report->id) . '</td>';
+                    echo '<td ' . $tdDate . '>' . e($report->tanggal?->format('d/m/Y') ?? '') . '</td>';
+                    echo '<td>' . e($report->user->name ?? 'Akun Sales Tidak Aktif') . '</td>';
+                    echo '<td ' . $tdDate . '>' . e($report->created_at?->setTimezone('Asia/Jakarta')->format('d/m/Y H:i:s') ?? '') . '</td>';
+                    echo '<td>' . e((string) ($index + 1)) . '</td>';
+                    echo '<td>' . e((string) $detail->outlet) . '</td>';
+                    echo '<td>' . e((string) $detail->alamat) . '</td>';
+                    echo '<td>' . e((string) $detail->pic) . '</td>';
+                    echo '<td>' . e((string) ($detail->keterangan ?? '')) . '</td>';
+                    echo '<td>' . e((string) ($detail->captured_at_label ?? '')) . '</td>';
+                    echo '<td>' . e((string) ($detail->latitude ?? '')) . '</td>';
+                    echo '<td>' . e((string) ($detail->longitude ?? '')) . '</td>';
+                    echo '</tr>';
+                }
+            }
+
+            echo '</tbody></table></body></html>';
+        }, 200, $headers);
     }
 
     /**

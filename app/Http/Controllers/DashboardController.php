@@ -31,7 +31,10 @@ class DashboardController extends Controller
             ];
 
             $recentReports = $user->reports()
-                ->with('user')
+                ->with([
+                    'user',
+                    'details:id,report_id,outlet',
+                ])
                 ->withCount('details')
                 ->latest()
                 ->take(5)
@@ -44,7 +47,10 @@ class DashboardController extends Controller
             ];
 
             $recentReports = Report::query()
-                ->with('user')
+                ->with([
+                    'user',
+                    'details:id,report_id,outlet',
+                ])
                 ->withCount('details')
                 ->latest()
                 ->take(5)
